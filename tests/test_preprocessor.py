@@ -11,9 +11,9 @@ import pandas as pd
 import pytest
 
 # Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from src.data.preprocessor import HousePricePreprocessor, load_and_preprocess_data
+from data.preprocessor import HousePricePreprocessor, load_and_preprocess_data
 
 
 class TestHousePricePreprocessor:

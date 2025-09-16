@@ -12,9 +12,9 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 # Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from src.models.ensemble_models import ModelTrainer, StackingEnsemble, train_complete_pipeline
+from models.ensemble_models import ModelTrainer, StackingEnsemble, train_complete_pipeline
 
 
 class TestStackingEnsemble:
