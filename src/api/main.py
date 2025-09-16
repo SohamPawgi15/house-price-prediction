@@ -23,7 +23,7 @@ app = FastAPI(
     description="Advanced ML API for predicting house prices using ensemble models",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Global variables for models
@@ -33,7 +33,7 @@ preprocessor = None
 
 class HouseFeatures(BaseModel):
     """Input model for house features."""
-    
+
     # Core features
     MSSubClass: int = Field(..., description="Type of dwelling")
     MSZoning: str = Field(..., description="General zoning classification")
@@ -64,7 +64,7 @@ class HouseFeatures(BaseModel):
     ExterQual: str = Field("TA", description="Exterior material quality")
     ExterCond: str = Field("TA", description="Present condition of the material on the exterior")
     Foundation: str = Field(..., description="Type of foundation")
-    
+
     # Basement features
     BsmtQual: Optional[str] = Field(None, description="Height of the basement")
     BsmtCond: Optional[str] = Field(None, description="General condition of the basement")
@@ -75,13 +75,13 @@ class HouseFeatures(BaseModel):
     BsmtFinSF2: Optional[int] = Field(None, description="Type 2 finished square feet")
     BsmtUnfSF: Optional[int] = Field(None, description="Unfinished square feet of basement area")
     TotalBsmtSF: Optional[int] = Field(None, description="Total square feet of basement area")
-    
+
     # Utilities
     Heating: str = Field("GasA", description="Type of heating")
     HeatingQC: str = Field("Ex", description="Heating quality and condition")
     CentralAir: str = Field("Y", description="Central air conditioning")
     Electrical: str = Field("SBrkr", description="Electrical system")
-    
+
     # Interior features
     FirstFlrSF: int = Field(..., alias="1stFlrSF", description="First Floor square feet")
     SecondFlrSF: int = Field(0, alias="2ndFlrSF", description="Second floor square feet")
@@ -98,7 +98,7 @@ class HouseFeatures(BaseModel):
     Functional: str = Field("Typ", description="Home functionality rating")
     Fireplaces: int = Field(0, description="Number of fireplaces")
     FireplaceQu: Optional[str] = Field(None, description="Fireplace quality")
-    
+
     # Garage features
     GarageType: Optional[str] = Field(None, description="Garage location")
     GarageYrBlt: Optional[int] = Field(None, description="Year garage was built")
@@ -108,7 +108,7 @@ class HouseFeatures(BaseModel):
     GarageQual: Optional[str] = Field(None, description="Garage quality")
     GarageCond: Optional[str] = Field(None, description="Garage condition")
     PavedDrive: str = Field("Y", description="Paved driveway")
-    
+
     # Outdoor features
     WoodDeckSF: int = Field(0, description="Wood deck area in square feet")
     OpenPorchSF: int = Field(0, description="Open porch area in square feet")
@@ -124,13 +124,13 @@ class HouseFeatures(BaseModel):
     YrSold: int = Field(..., ge=1900, le=2024, description="Year Sold")
     SaleType: str = Field("WD", description="Type of sale")
     SaleCondition: str = Field("Normal", description="Condition of sale")
-    
-    @validator('YearRemodAdd')
+
+    @validator("YearRemodAdd")
     def validate_remodel_year(cls, v, values):
-        if 'YearBuilt' in values and v < values['YearBuilt']:
-            raise ValueError('Remodel year cannot be before build year')
+        if "YearBuilt" in values and v < values["YearBuilt"]:
+            raise ValueError("Remodel year cannot be before build year")
         return v
-    
+
     class Config:
         allow_population_by_field_name = True
         schema_extra = {
@@ -154,13 +154,14 @@ class HouseFeatures(BaseModel):
                 "BedroomAbvGr": 3,
                 "TotRmsAbvGrd": 8,
                 "MoSold": 2,
-                "YrSold": 2008
+                "YrSold": 2008,
             }
         }
 
 
 class PredictionResponse(BaseModel):
     """Response model for predictions."""
+
     predicted_price: float = Field(..., description="Predicted house price in USD")
     confidence_interval: Optional[Dict[str, float]] = Field(None, description="95% confidence interval")
     model_used: str = Field(..., description="Name of the model used for prediction")
@@ -169,6 +170,7 @@ class PredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health check."""
+
     status: str = Field(..., description="API status")
     model_loaded: bool = Field(..., description="Whether model is loaded")
     version: str = Field(..., description="API version")
@@ -186,7 +188,7 @@ def get_model():
 async def load_model():
     """Load the trained model and preprocessor on startup."""
     global model
-    
+
     try:
         # Try to load the best stacking ensemble model
         model_path = "models/stacking_ensemble_model.joblib"
@@ -206,11 +208,11 @@ async def load_model():
                     logger.warning("No trained models found")
             else:
                 logger.warning("Models directory not found")
-        
+
         # Load preprocessor (would be saved separately in real implementation)
         # For now, we'll create a basic preprocessing function
         logger.info("Model loading complete")
-        
+
     except Exception as e:
         logger.error(f"Error loading model: {str(e)}")
 
@@ -219,87 +221,74 @@ def preprocess_input(features: HouseFeatures) -> pd.DataFrame:
     """Preprocess input features for prediction."""
     # Convert Pydantic model to dictionary
     feature_dict = features.dict(by_alias=True)
-    
+
     # Create DataFrame
     df = pd.DataFrame([feature_dict])
-    
+
     # Basic preprocessing (in real implementation, use the trained preprocessor)
     # Handle missing values
     df = df.fillna(0)
-    
+
     # Ensure all required columns are present and in correct order
     # This would match the training data structure
-    
+
     return df
 
 
 @app.get("/", response_model=HealthResponse)
 async def root():
     """Root endpoint returning API information."""
-    return HealthResponse(
-        status="healthy",
-        model_loaded=model is not None,
-        version="1.0.0"
-    )
+    return HealthResponse(status="healthy", model_loaded=model is not None, version="1.0.0")
 
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
-    return HealthResponse(
-        status="healthy",
-        model_loaded=model is not None,
-        version="1.0.0"
-    )
+    return HealthResponse(status="healthy", model_loaded=model is not None, version="1.0.0")
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_price(
-    features: HouseFeatures,
-    model_info: tuple = Depends(get_model)
-):
+async def predict_price(features: HouseFeatures, model_info: tuple = Depends(get_model)):
     """
     Predict house price based on features.
-    
+
     Returns predicted price with confidence information.
     """
     try:
         model, preprocessor = model_info
-        
+
         # Preprocess input
         df = preprocess_input(features)
-        
+
         # Make prediction
         prediction = model.predict(df)[0]
-        
+
         # Generate prediction ID
         import uuid
+
         prediction_id = str(uuid.uuid4())
-        
+
         # For ensemble models, we could calculate confidence intervals
         # based on individual model predictions
         confidence_interval = None
-        if hasattr(model, 'fitted_base_models'):
+        if hasattr(model, "fitted_base_models"):
             # Get predictions from all base models
             base_predictions = []
             for base_model in model.fitted_base_models.values():
                 base_pred = base_model.predict(df)[0]
                 base_predictions.append(base_pred)
-            
+
             # Calculate confidence interval (simple approach)
             std_dev = np.std(base_predictions)
-            confidence_interval = {
-                "lower": float(prediction - 1.96 * std_dev),
-                "upper": float(prediction + 1.96 * std_dev)
-            }
-        
+            confidence_interval = {"lower": float(prediction - 1.96 * std_dev), "upper": float(prediction + 1.96 * std_dev)}
+
         return PredictionResponse(
             predicted_price=float(prediction),
             confidence_interval=confidence_interval,
             model_used=type(model).__name__,
-            prediction_id=prediction_id
+            prediction_id=prediction_id,
         )
-        
+
     except Exception as e:
         logger.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
@@ -309,17 +298,17 @@ async def predict_price(
 async def get_model_info(model_info: tuple = Depends(get_model)):
     """Get information about the loaded model."""
     model, preprocessor = model_info
-    
+
     info = {
         "model_type": type(model).__name__,
         "sklearn_version": "1.3.2",  # Update based on requirements
     }
-    
+
     # Add ensemble-specific information
-    if hasattr(model, 'fitted_base_models'):
+    if hasattr(model, "fitted_base_models"):
         info["base_models"] = list(model.fitted_base_models.keys())
         info["model_weights"] = model.get_model_weights()
-    
+
     return info
 
 
@@ -327,23 +316,19 @@ async def get_model_info(model_info: tuple = Depends(get_model)):
 async def get_feature_importance(model_info: tuple = Depends(get_model)):
     """Get feature importance from the model."""
     model, preprocessor = model_info
-    
-    if hasattr(model, 'feature_importance_df') and model.feature_importance_df is not None:
+
+    if hasattr(model, "feature_importance_df") and model.feature_importance_df is not None:
         # Return top 20 most important features
-        top_features = (model.feature_importance_df
-                       .groupby('feature')['importance']
-                       .mean()
-                       .sort_values(ascending=False)
-                       .head(20))
-        
-        return {
-            "feature_importance": top_features.to_dict(),
-            "total_features": len(top_features)
-        }
+        top_features = (
+            model.feature_importance_df.groupby("feature")["importance"].mean().sort_values(ascending=False).head(20)
+        )
+
+        return {"feature_importance": top_features.to_dict(), "total_features": len(top_features)}
     else:
         return {"message": "Feature importance not available for this model"}
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
