@@ -2,16 +2,11 @@
 Unit tests for data preprocessing pipeline.
 """
 
-import os
-import sys
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
-
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from data.preprocessor import HousePricePreprocessor, load_and_preprocess_data
 

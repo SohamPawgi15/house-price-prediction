@@ -2,17 +2,12 @@
 Unit tests for ensemble models and training pipeline.
 """
 
-import os
-import sys
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from sklearn.metrics import mean_squared_error
-
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from models.ensemble_models import ModelTrainer, StackingEnsemble, train_complete_pipeline
 
