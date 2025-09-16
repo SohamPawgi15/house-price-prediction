@@ -2,6 +2,7 @@
 Unit tests for data preprocessing pipeline.
 """
 
+import os
 from unittest.mock import patch
 
 import numpy as np
