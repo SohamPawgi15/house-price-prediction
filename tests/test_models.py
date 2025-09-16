@@ -2,18 +2,19 @@
 Unit tests for ensemble models and training pipeline.
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-from unittest.mock import patch, MagicMock
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pandas as pd
+import pytest
 from sklearn.metrics import mean_squared_error
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from models.ensemble_models import StackingEnsemble, ModelTrainer, train_complete_pipeline
+from models.ensemble_models import ModelTrainer, StackingEnsemble, train_complete_pipeline
 
 
 class TestStackingEnsemble:
@@ -36,8 +37,8 @@ class TestStackingEnsemble:
     @pytest.fixture
     def base_models(self):
         """Create simple base models for testing."""
-        from sklearn.linear_model import LinearRegression, Ridge
         from sklearn.ensemble import RandomForestRegressor
+        from sklearn.linear_model import LinearRegression, Ridge
 
         return {
             "linear": LinearRegression(),
@@ -378,8 +379,8 @@ class TestModelsIntegration:
 
         # Train simplified pipeline
         with patch("src.models.ensemble_models.ModelTrainer.get_base_models") as mock_get_models:
-            from sklearn.linear_model import LinearRegression, Ridge
             from sklearn.ensemble import RandomForestRegressor
+            from sklearn.linear_model import LinearRegression, Ridge
 
             mock_get_models.return_value = {
                 "linear": LinearRegression(),

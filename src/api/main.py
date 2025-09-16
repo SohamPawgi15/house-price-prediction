@@ -3,15 +3,16 @@ FastAPI application for house price prediction service.
 Provides RESTful endpoints for model predictions and health checks.
 """
 
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, Field, validator
-import pandas as pd
-import numpy as np
-import joblib
 import logging
-from typing import Dict, List, Optional, Any
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import joblib
+import numpy as np
+import pandas as pd
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel, Field, validator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

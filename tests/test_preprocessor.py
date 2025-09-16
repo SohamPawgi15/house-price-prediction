@@ -2,12 +2,13 @@
 Unit tests for data preprocessing pipeline.
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-from unittest.mock import patch
-import sys
 import os
+import sys
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+import pytest
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))

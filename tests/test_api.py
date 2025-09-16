@@ -2,17 +2,18 @@
 Unit tests for FastAPI application.
 """
 
-import pytest
 import json
-import sys
 import os
-from unittest.mock import patch, MagicMock
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from api.main import app, HouseFeatures, PredictionResponse, HealthResponse
+from api.main import HealthResponse, HouseFeatures, PredictionResponse, app
 
 
 class TestAPI:

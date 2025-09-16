@@ -3,14 +3,15 @@ Model evaluation and performance metrics module.
 Provides comprehensive evaluation tools for regression models.
 """
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error
-from sklearn.model_selection import learning_curve, validation_curve
-from typing import Dict, List, Tuple, Optional, Any
 import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
+from sklearn.model_selection import learning_curve, validation_curve
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -399,9 +400,9 @@ def evaluate_ensemble_model(ensemble_model, X_test: pd.DataFrame, y_test: pd.Ser
 
 if __name__ == "__main__":
     # Example usage
+    import numpy as np
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
-    import numpy as np
 
     # Create sample data
     np.random.seed(42)

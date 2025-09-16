@@ -3,20 +3,21 @@ Advanced ensemble modeling pipeline for house price prediction.
 Implements multiple base models and stacking meta-learner.
 """
 
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge, ElasticNet
-from sklearn.model_selection import KFold, cross_val_score
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.base import BaseEstimator, RegressorMixin, clone
-import xgboost as xgb
-import lightgbm as lgb
-from catboost import CatBoostRegressor
-import joblib
 import logging
-from typing import Dict, List, Tuple, Any, Optional
 import warnings
+from typing import Any, Dict, List, Optional, Tuple
+
+import joblib
+import lightgbm as lgb
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+from catboost import CatBoostRegressor
+from sklearn.base import BaseEstimator, RegressorMixin, clone
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import ElasticNet, LinearRegression, Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import KFold, cross_val_score
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO)
