@@ -1,0 +1,150 @@
+name: Model Training Pipeline
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      retrain:
+        description: 'Force model retraining'
+        required: false
+        default: 'false'
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  train-models:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Download dataset
+      run: |
+        # In a real scenario, you might download from a data source
+        # For now, we'll use the local dataset
+        ls -la house-prices-advanced-regression-techniques/
+    
+    - name: Train models
+      run: |
+        cd src
+        python -c "
+        import sys
+        import os
+        sys.path.append('.')
+        
+        from data.preprocessor import load_and_preprocess_data
+        from models.ensemble_models import train_complete_pipeline
+        import logging
+        
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        
+        # Check if dataset exists
+        train_path = '../house-prices-advanced-regression-techniques/train.csv'
+        test_path = '../house-prices-advanced-regression-techniques/test.csv'
+        
+        if os.path.exists(train_path) and os.path.exists(test_path):
+            logger.info('Loading and preprocessing data...')
+            X_train, X_test, y_train = load_and_preprocess_data(train_path, test_path)
+            
+            logger.info('Training models...')
+            trainer, best_model = train_complete_pipeline(X_train, y_train)
+            
+            # Create models directory
+            os.makedirs('../models', exist_ok=True)
+            
+            # Save models
+            trainer.save_models('../models/')
+            
+            # Print performance summary
+            summary = trainer.get_model_summary()
+            logger.info('Training completed!')
+            logger.info(f'Model performance summary:')
+            print(summary.to_string(index=False))
+            
+        else:
+            logger.warning('Dataset not found, skipping training')
+        "
+    
+    - name: Validate trained models
+      run: |
+        cd src
+        python -c "
+        import os
+        import joblib
+        import numpy as np
+        import pandas as pd
+        
+        models_dir = '../models'
+        if os.path.exists(models_dir):
+            model_files = [f for f in os.listdir(models_dir) if f.endswith('.joblib')]
+            print(f'Found {len(model_files)} trained models:')
+            
+            for model_file in model_files:
+                model_path = os.path.join(models_dir, model_file)
+                try:
+                    model = joblib.load(model_path)
+                    print(f'✓ {model_file}: {type(model).__name__}')
+                    
+                    # Basic validation - create dummy data and predict
+                    dummy_data = pd.DataFrame(np.random.randn(5, 10))
+                    if hasattr(model, 'predict'):
+                        try:
+                            predictions = model.predict(dummy_data)
+                            print(f'  - Prediction test: PASSED')
+                        except Exception as e:
+                            print(f'  - Prediction test: FAILED ({str(e)})')
+                    
+                except Exception as e:
+                    print(f'✗ {model_file}: Failed to load ({str(e)})')
+        else:
+            print('No models directory found')
+        "
+    
+    - name: Upload trained models
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-models
+        path: models/
+    
+    - name: Generate model report
+      run: |
+        cd src
+        python -c "
+        import json
+        import os
+        from datetime import datetime
+        
+        report = {
+            'training_date': datetime.now().isoformat(),
+            'models_trained': [],
+            'training_status': 'completed'
+        }
+        
+        models_dir = '../models'
+        if os.path.exists(models_dir):
+            model_files = [f for f in os.listdir(models_dir) if f.endswith('.joblib')]
+            report['models_trained'] = model_files
+            report['model_count'] = len(model_files)
+        
+        with open('../model_training_report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+        
+        print('Model training report generated')
+        "
+    
+    - name: Upload training report
+      uses: actions/upload-artifact@v3
+      with:
+        name: training-report
+        path: model_training_report.json

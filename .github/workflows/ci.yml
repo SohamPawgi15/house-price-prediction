@@ -1,0 +1,226 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-xvfb  # For headless testing if needed
+    
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Format check with black
+      run: |
+        black --check src/ tests/
+    
+    - name: Sort imports check with isort
+      run: |
+        isort --check-only src/ tests/
+    
+    - name: Test with pytest
+      run: |
+        pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build-and-test-api:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Test API endpoints
+      run: |
+        # Start the API in background
+        cd src && python -m api.main &
+        API_PID=$!
+        
+        # Wait for API to start
+        sleep 10
+        
+        # Test health endpoint
+        curl -f http://localhost:8000/health || exit 1
+        
+        # Test API documentation
+        curl -f http://localhost:8000/docs || exit 1
+        
+        # Stop API
+        kill $API_PID
+    
+    - name: Run integration tests
+      run: |
+        pytest tests/ -v -m integration
+
+  model-training-test:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Test data preprocessing
+      run: |
+        cd src
+        python -c "
+        from data.preprocessor import HousePricePreprocessor
+        import pandas as pd
+        import numpy as np
+        
+        # Test with synthetic data
+        np.random.seed(42)
+        test_data = pd.DataFrame({
+            'MSSubClass': [60, 20, 70],
+            'MSZoning': ['RL', 'RL', 'RM'],
+            'LotArea': [8450, 9600, 10000],
+            'OverallQual': [7, 6, 8],
+            'GrLivArea': [1710, 1262, 1800],
+            '1stFlrSF': [856, 1262, 900],
+            '2ndFlrSF': [854, 0, 900],
+            'YearBuilt': [2003, 1976, 2000],
+            'YearRemodAdd': [2003, 1976, 2000]
+        })
+        
+        preprocessor = HousePricePreprocessor()
+        result = preprocessor.fit_transform(test_data)
+        print('Preprocessing test passed!')
+        "
+    
+    - name: Test model training (lightweight)
+      run: |
+        cd src
+        python -c "
+        from models.ensemble_models import ModelTrainer
+        import pandas as pd
+        import numpy as np
+        
+        # Create synthetic training data
+        np.random.seed(42)
+        X = pd.DataFrame({
+            'feature1': np.random.normal(0, 1, 100),
+            'feature2': np.random.normal(0, 1, 100),
+            'feature3': np.random.normal(0, 1, 100)
+        })
+        y = pd.Series(X['feature1'] * 2 + X['feature2'] * 3 + np.random.normal(0, 0.1, 100))
+        
+        # Test lightweight training
+        trainer = ModelTrainer()
+        models = {
+            'linear': trainer.get_base_models()['linear_regression'],
+            'ridge': trainer.get_base_models()['ridge']
+        }
+        
+        # Quick training test
+        for name, model in models.items():
+            model.fit(X, y)
+            predictions = model.predict(X)
+            assert len(predictions) == len(y)
+        
+        print('Model training test passed!')
+        "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit
+        bandit -r src/ -f json -o bandit-report.json || true
+    
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: bandit-report
+        path: bandit-report.json
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build-and-test-api, model-training-test]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Build deployment package
+      run: |
+        mkdir -p deployment
+        cp -r src/ deployment/
+        cp requirements.txt deployment/
+        cp -r models/ deployment/ || echo "No models directory to copy"
+    
+    - name: Upload deployment artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: deployment/

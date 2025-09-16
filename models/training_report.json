@@ -1,0 +1,66 @@
+{
+  "training_completed": true,
+  "training_time_seconds": 176.36077785491943,
+  "models_trained": [
+    "linear_regression",
+    "ridge",
+    "elastic_net",
+    "random_forest",
+    "xgboost",
+    "lightgbm",
+    "catboost",
+    "stacking_ensemble"
+  ],
+  "model_performance": {
+    "linear_regression": {
+      "cv_rmse": 39447.12301713972,
+      "cv_rmse_std": 18456.221652047472
+    },
+    "ridge": {
+      "cv_rmse": 38218.92399071254,
+      "cv_rmse_std": 18582.1251699622
+    },
+    "elastic_net": {
+      "cv_rmse": 38812.02549422185,
+      "cv_rmse_std": 18606.546309950554
+    },
+    "random_forest": {
+      "cv_rmse": 28956.96908480676,
+      "cv_rmse_std": 7392.343494350555
+    },
+    "xgboost": {
+      "cv_rmse": 29993.76269944173,
+      "cv_rmse_std": 7946.635746456758
+    },
+    "lightgbm": {
+      "cv_rmse": 31156.2669683874,
+      "cv_rmse_std": 9259.729523446515
+    },
+    "catboost": {
+      "cv_rmse": 27163.260665637634,
+      "cv_rmse_std": 6857.835486481733
+    },
+    "stacking_ensemble": {
+      "cv_rmse": 30950.06407097911,
+      "cv_rmse_std": 11934.492553799922
+    },
+    "target_optimized_stacking": {
+      "cv_rmse": 31622.03026799976,
+      "cv_rmse_std": 0.0,
+      "r2_score": 0.798056187400937,
+      "normalized_rmse": 0.17478344708241986,
+      "status": "NEEDS_OPTIMIZATION"
+    }
+  },
+  "best_model": "catboost",
+  "best_cv_rmse": 27163.260665637634,
+  "timestamp": "2025-09-16T14:20:34.361888",
+  "target_achievement": {
+    "r2_target": 0.907,
+    "rmse_target": 0.125,
+    "r2_achieved": 0.798056187400937,
+    "rmse_achieved": 0.17478344708241986,
+    "targets_met": false,
+    "performance_level": "NEEDS_OPTIMIZATION"
+  }
+}
