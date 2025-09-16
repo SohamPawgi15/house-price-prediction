@@ -177,7 +177,6 @@ class HealthResponse(BaseModel):
 # Dependency to get model
 def get_model():
     """Dependency to ensure model is loaded."""
-    global model, preprocessor
     if model is None or preprocessor is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     return model, preprocessor
@@ -186,7 +185,7 @@ def get_model():
 @app.on_event("startup")
 async def load_model():
     """Load the trained model and preprocessor on startup."""
-    global model, preprocessor
+    global model
     
     try:
         # Try to load the best stacking ensemble model
@@ -237,7 +236,6 @@ def preprocess_input(features: HouseFeatures) -> pd.DataFrame:
 @app.get("/", response_model=HealthResponse)
 async def root():
     """Root endpoint returning API information."""
-    global model
     return HealthResponse(
         status="healthy",
         model_loaded=model is not None,
@@ -248,7 +246,6 @@ async def root():
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
-    global model
     return HealthResponse(
         status="healthy",
         model_loaded=model is not None,
