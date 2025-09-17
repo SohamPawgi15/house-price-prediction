@@ -420,9 +420,9 @@ if __name__ == "__main__":
     evaluator = ModelEvaluator(models)
     results = evaluator.evaluate_all_models(X, y)
 
-    print("Evaluation Results:")
-    print(results)
+    logger.info("Evaluation Results:")
+    logger.info(f"\n{results}")
 
     # Generate report
     report = evaluator.generate_evaluation_report(X, y)
-    print("\n" + report)
+    logger.info(f"\n{report}")

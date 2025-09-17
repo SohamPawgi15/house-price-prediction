@@ -314,5 +314,5 @@ if __name__ == "__main__":
     # Save models
     trainer.save_models()
 
-    print(f"Training completed. Best model: {type(best_model).__name__}")
-    print(f"Model weights: {best_model.get_model_weights()}")
+    logger.info(f"Training completed. Best model: {type(best_model).__name__}")
+    logger.info(f"Model weights: {best_model.get_model_weights()}")
